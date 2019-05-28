@@ -21,7 +21,7 @@ class BiLSTM(nn.Module):
         lstm_out, _ = self.lstm(packed)
         lstm_out, _ = pad_packed_sequence(lstm_out, batch_first=True)
         tag_space = self.lin(lstm_out)
-        tag_scores = F.log_softmax(tag_space, dim=-1)
+        tag_scores = F.softmax(tag_space, dim=-1)
         return tag_scores
 
 
@@ -37,6 +37,8 @@ class BiLSTMTagger(object):
         # self.hidden_dim = config['LSTM']['hidden_dim']
         self.emb_dim = 200
         self.hidden_dim = 100
+        self.vocab_size = vocab_size
+        self.tagset_size = tagset_size
     
         self.model = BiLSTM(vocab_size, self.emb_dim, self.hidden_dim, tagset_size, bidirectional=bidirectional)
 
@@ -51,7 +53,6 @@ class BiLSTMTagger(object):
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
-        self.loss_func = nn.NLLLoss()
         self.step = 0
         self.best_val_loss = 1e10
         self.final_model = None
@@ -82,7 +83,7 @@ class BiLSTMTagger(object):
         print(scores.size())
         print(tag_tensor.size())
         self.model.zero_grad()
-        loss = self.loss_func(scores, tag_tensor)
+        loss = self.loss_func(scores, tag_tensor, tag2id)
         loss.backward()
         self.optimizer.step()
 
@@ -96,8 +97,8 @@ class BiLSTMTagger(object):
             val_step = 0
             for index in range(0, len(dev_sents_list), self.batch_size):
                 val_step += 1
-                batch_sents = dev_sents_list[ind: index+self.batch_size]
-                batch_tags = dev_tags_list[ind: index+self.batch_size]
+                batch_sents = dev_sents_list[index: index+self.batch_size]
+                batch_tags = dev_tags_list[index: index+self.batch_size]
                 batch_tensor, lengths = self.tensorize(batch_sents, word2id)
                 tag_tensor, lengths = self.tensorize(batch_tags, tag2id)
 
@@ -126,3 +127,23 @@ class BiLSTMTagger(object):
         lengths = [len(sent) for sent in batch]
 
         return batch_tensor, lengths
+
+    def loss_func(self, tag_scores, tag_tensor, tag2id):
+        """计算损失
+        参数:
+            tag_scores: [B, L, tagset_size]
+            tag_tensor: [B, L]
+        """
+        PAD = tag2id.get('<PAD>')
+        assert PAD is not None
+
+        mask = (tag_tensor != PAD)
+        tag_tensor = tag_tensor[mask]
+        tag_scores = tag_scores.masked_select(
+            mask.unsqueeze(2).expand(-1, -1, self.tagset_size)
+        ).contiguous().view(-1, self.tagset_size)
+
+        assert tag_scores.size(0) == tag_tensor.size(0)
+        loss = F.cross_entropy(tag_scores, tag_tensor)
+
+        return loss
