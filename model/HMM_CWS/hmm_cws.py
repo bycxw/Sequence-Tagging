@@ -146,11 +146,29 @@ class HMM(object):
 
 
 if __name__ == '__main__':
-    text = '大多数纵向研究着重于患儿的拒绝上学症状，年幼儿童早期发病的预后较好，一般能较早回到学校；而青少年儿童在发病时伴有其他症状如学习困难，则预后相对比年幼儿童差一些。作为一个群体来说，儿童患分离性焦虑症是成人期焦虑症的一个风险较大的高危因素。'
 
     train_data = '../../data/trainset/train_cws.txt'
     model_file = 'hmm_model.pkl'
     hmm = HMM()
     hmm.train(open(train_data, 'r', encoding='utf-8'), model_file)
     hmm.load_model(model_file)
-    print('/'.join(hmm.cut(text)))
+
+    test_file = '../../data/testset1/test_cws1_new.txt'
+    f = open(test_file,'r')
+    data = f.readlines()
+    print (data[0])
+    print (len(data))
+    f.close()
+
+    data_seg = []
+    for line in data:
+        str = ' '.join(hmm.cut(line))
+        data_seg.append(str)
+
+    result_file = '../../data/testset1/test_cws1_hmm.txt'
+    f2 = open(result_file,'w')
+    f2.writelines(data_seg)
+    f2.close()
+
+    # text = '大多数纵向研究着重于患儿的拒绝上学症状，年幼儿童早期发病的预后较好，一般能较早回到学校；而青少年儿童在发病时伴有其他症状如学习困难，则预后相对比年幼儿童差一些。作为一个群体来说，儿童患分离性焦虑症是成人期焦虑症的一个风险较大的高危因素。'
+    # print(' '.join(hmm.cut(text)))
