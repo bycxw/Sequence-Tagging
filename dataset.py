@@ -54,7 +54,7 @@ def format_ner_data(data_file, format_data_file):
                     i += 1
                     left_bracket = 0
             for i in range(len(ne_cache[0])):
-                for j in range(1):
+                for j in range(3):
                     wf.write(ne_cache[j][i] + '\t')
                 wf.write(ne_cache[3][i] + '\n')
         except Exception as e:
