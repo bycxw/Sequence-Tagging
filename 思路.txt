@@ -1,0 +1,15 @@
+思路
+1. LSTM, BiLSTM
+2. BiLSTM + CRF
+3. 加上 pretrained embedding
+3.1 pretrained embedding采用腾讯的静态词向量
+3.2 pretrained embedding采用elmo
+4. bert + BiLSTM + CRF
+5. char level embedding or word level embedding(是否将分词加到pos和ner pipeline里)
+
+问题点
+1. 英文单词的处理结果可能会比较差
+2. ner的嵌套问题来不及处理
+3. 目前我配好能用的elmo是tf下的, 但这次作业的模型是用torch写的, 来不及配环境。。。
+4. bert有类似的tf->torch转换的问题
+5. 最初应该用tf写的。。。。。。。。。。。。。。。
