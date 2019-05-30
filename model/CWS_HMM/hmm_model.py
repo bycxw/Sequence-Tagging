@@ -5,11 +5,14 @@
 @time: 2019/05/21
 """
 
+from model.CWS_HMM import utils
+
 class HMM(object):
 
-    def __init__(self):
-		# 状态列表
-        self.state_list = ['B','M','E','S']
+    def __init__(self,state_list=[]):
+        # 状态列表
+        self.state_list = state_list
+        # B，S，E，M四种
 
         # 初始状态概率
         self.start_p = {}
@@ -23,10 +26,11 @@ class HMM(object):
         self.model_file = 'hmm_cws_model.pkl'
         self.trained = False
 
-    def train(self,datas,model_path=None):
+    def train(self,sents_list,tags_list,model_path=None):
         if model_path == None:
             model_path = self.model_file
-        #统计状态频数
+
+        # 统计状态频数
         state_dict = {}
 
         def init_parameters():
@@ -36,34 +40,16 @@ class HMM(object):
                 self.emit_p[state] = {}
                 state_dict[state] = 0
 
-        def make_label(text):
-            out_text = []
-            if len(text) == 1:
-                out_text = ['S']
-            else :
-                out_text += ['B']+['M']*(len(text)-2)+['E']
-            return out_text
-
         init_parameters()
-        line_nb = 0
-		# 文本的行数
+        line_nb = len(sents_list)
+        # 文本的行数
 
         #监督学习方法求解参数，详情见统计学习方法10.3.1节
-        for line in datas:
-            line = line.strip()
-            if not line:
-                continue
-            line_nb += 1
-
-            word_list = [w for w in line if w != ' ']
-            line_list = line.split()
-			# 按空格切分成"词"
-            line_state = []
-            for w in line_list:
-                line_state.extend(make_label(w))
-
+        for i in range (0,len(sents_list)):
+            word_list = list(sents_list[i])
+            line_state = list(tags_list[i])
             assert len(line_state) == len(word_list)
-
+            # 确保他们的长度相等
             for i,v in enumerate(line_state):
                 state_dict[v] += 1
 
@@ -83,7 +69,7 @@ class HMM(object):
             pickle.dump(self.trans_p,f)
             pickle.dump(self.emit_p,f)
         self.trained = True
-        print('model train done,parameters save to ',model_path)
+        print('model train done, model parameters save to ',model_path)
 
     #读取参数模型
     def load_model(self,path):
@@ -93,9 +79,9 @@ class HMM(object):
             self.trans_p = pickle.load(f)
             self.emit_p = pickle.load(f)
         self.trained = True
-        print('model parameters load done!')
+        # print('model parameters load done!')
 
-    #维特比算法求解最优路径 ，详情见统计学方法10.4.2节
+    #维特比算法求解最优路径
     def __viterbi(self,text,states,start_p,trans_p,emit_p):
         V = [{}]
         path = {}
@@ -147,10 +133,11 @@ class HMM(object):
 
 if __name__ == '__main__':
 
-    train_data = '../../data/trainset/train_cws.txt'
+    train_file = '../../data/trainset/train_cws_format'
     model_file = 'hmm_model.pkl'
     hmm = HMM()
-    hmm.train(open(train_data, 'r', encoding='utf-8'), model_file)
+    sents_list,tags_list = utils.read_data(train_file)
+    hmm.train(sents_list,tags_list,model_file)
     hmm.load_model(model_file)
 
     test_file = '../../data/testset1/test_cws1_new.txt'
@@ -170,5 +157,5 @@ if __name__ == '__main__':
     f2.writelines(data_seg)
     f2.close()
 
-    # text = '大多数纵向研究着重于患儿的拒绝上学症状，年幼儿童早期发病的预后较好，一般能较早回到学校；而青少年儿童在发病时伴有其他症状如学习困难，则预后相对比年幼儿童差一些。作为一个群体来说，儿童患分离性焦虑症是成人期焦虑症的一个风险较大的高危因素。'
-    # print(' '.join(hmm.cut(text)))
+    text = '大多数纵向研究着重于患儿的拒绝上学症状，年幼儿童早期发病的预后较好，一般能较早回到学校；而青少年儿童在发病时伴有其他症状如学习困难，则预后相对比年幼儿童差一些。作为一个群体来说，儿童患分离性焦虑症是成人期焦虑症的一个风险较大的高危因素。'
+    print(' '.join(hmm.cut(text)))
