@@ -54,7 +54,8 @@ if __name__ == '__main__':
 	ref_file = '../../data/testset1/test_cws1.txt'
 	cad_file =  test_result_file
 
-	state_list = get_state_list(train_file)
+	# state_list = get_state_list(train_file)
+	state_list = ['B','M','E','S']
 	hmm_model_run(train_file,model_file,state_list)
 	hmm_model_test(test_file,test_result_file,state_list)
 	precision, recall, f1 = model_evaluate(ref_file, test_result_file)
